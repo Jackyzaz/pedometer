@@ -1,13 +1,13 @@
 .include "m328pdef.inc"
 
-.def MODE_FLAG = r15 ; Display Mode 0 = Step, 1 = Meter
+.def MODE_FLAG = r15 ; โหมดการแสดงผล: 0 = นับก้าว (Step), 1 = ระยะทาง (Meter)
 .def TEMP      = r16
 
-; 16 bit counter by use 2 register R18:R17
+; ตัวนับขนาด 16 บิต โดยใช้รีจิสเตอร์คู่ R18:R17
 .def COUNTER_L = r17  
 .def COUNTER_H = r18 
 
-; 4 BCD register
+; รีจิสเตอร์สำหรับเก็บค่า BCD ทั้ง 4 หลัก
 .def DIG1      = r19 
 .def DIG2      = r20 
 .def DIG3      = r21 
@@ -17,87 +17,87 @@
 .org 0x0000
     rjmp start
 .org 0x0006
-    rjmp PinChangeInt0 
+    rjmp PinChangeInt0 ; อินเตอร์รัพท์เมื่อมีการเปลี่ยนสถานะพิน (PCI0)
 
 start:
-    ; 1. Set stack pointer to last address
+    ; 1. ตั้งค่า Stack Pointer ไปที่ตำแหน่งสุดท้ายของ RAM
     ldi TEMP, low(RAMEND)
     out SPL, TEMP
     ldi TEMP, high(RAMEND)
     out SPH, TEMP
 
-    ; 2. Set Output Port D (Segments) and Port C (Digits Multiplex)
+    ; 2. ตั้งค่าพอร์ต: Port D เป็น Output (Segment), Port C เป็น Output (Digit Multiplex)
     ldi TEMP, 0b11111111   
     out DDRD, TEMP      
     ldi TEMP, 0b00001111 
     out DDRC, TEMP      
 
-    ; 3. Allow Interrupt PCI0 (Port B)
-    ldi r20, 0x01           ; Set PCICR first bit to allow PCI0
-    ldi ZL, low(PCICR)		; load low address to ZL
-    ldi ZH, high(PCICR)		; load high address to ZH
-    st  Z, r20				; store by memory address
+    ; 3. เปิดใช้งานอินเตอร์รัพท์ PCI0 (กลุ่ม Port B)
+    ldi r20, 0x01             ; ตั้งค่าบิตแรกของ PCICR เพื่อเปิดใช้งาน PCI0
+    ldi ZL, low(PCICR)        ; โหลดตำแหน่ง Address ต่ำของ PCICR เข้า ZL
+    ldi ZH, high(PCICR)       ; โหลดตำแหน่ง Address สูงของ PCICR เข้า ZH
+    st  Z, r20                ; จัดเก็บค่าลงในหน่วยความจำ
 
-    ; --- Allow PB 0-4 to use interrupt PCMSK0 ---
-    ldi r20, 0b00011111		; config mask PB0 1 2 3 4
-    ldi ZL, low(PCMSK0)		; load low address to ZL
-    ldi ZH, high(PCMSK0)	; load high address to ZH
-    st  Z, r20				; Store by memory address
+    ; --- กำหนดให้ PB 0-4 สามารถสร้างอินเตอร์รัพท์ได้ผ่าน PCMSK0 ---
+    ldi r20, 0b00011111        ; เลือกพิน PB0, 1, 2, 3, 4
+    ldi ZL, low(PCMSK0)        
+    ldi ZH, high(PCMSK0)    
+    st  Z, r20                
 
-    ; 4. Set input direction Port B
-    ldi TEMP, 0b11100000	; Input PB 01234
-    out DDRB, TEMP		
+    ; 4. ตั้งค่า Port B ให้เป็น Input (PB 0-4)
+    ldi TEMP, 0b11100000    
+    out DDRB, TEMP        
 
-    ; 5. Clear Status
-    clr COUNTER_L			; Clear Low Counter to 0
-    clr COUNTER_H			; Clear High Counter to 0
-    clr MODE_FLAG			; Set Mode flag to counter mode
+    ; 5. ล้างสถานะเริ่มต้น
+    clr COUNTER_L             ; ล้างค่าตัวนับตัวต่ำเป็น 0
+    clr COUNTER_H             ; ล้างค่าตัวนับตัวสูงเป็น 0
+    clr MODE_FLAG             ; เริ่มต้นที่โหมดนับก้าว (Step mode)
 
-	; 6. Start 7 Segment Display
-    rcall UpdateDigits			
-	sei
+    ; 6. เริ่มการแสดงผล 7 Segment
+    rcall UpdateDigits        ; อัปเดตค่าตัวเลขที่จะแสดง     
+    sei                       ; เปิดการใช้งานอินเตอร์รัพท์รวม (Global Interrupt)
 
 main_loop:
-	rcall display_counter
-	rjmp main_loop
+    rcall display_counter     ; เรียกฟังก์ชันแสดงผลตัวเลข
+    rjmp main_loop            ; วนลูปการทำงานหลัก
 
 display_counter:
     push TEMP
     push r25
 
-    ; --- Show Digit 1
-    mov  r25, DIG1			; Load BCD 1
-    rcall BIN_TO_7SEG		; convert bcd to 7seg
-    out  PORTD, r25			; send 7seg display
-    ldi  TEMP, 0b00000001	; Turn on digit 1
-    out  PORTC, TEMP		; send digit multiplex
-    rcall delay_1ms			
+    ; --- แสดงผลหลักที่ 1
+    mov  r25, DIG1            ; โหลดค่า BCD หลักที่ 1
+    rcall BIN_TO_7SEG         ; แปลง BCD เป็นรหัส 7 Segment
+    out  PORTD, r25           ; ส่งข้อมูลออกทาง Port D
+    ldi  TEMP, 0b00000001     ; เปิดการทำงานหลักที่ 1
+    out  PORTC, TEMP          ; เลือกหลักผ่าน Port C
+    rcall delay_1ms           ; หน่วงเวลาเพื่อให้ตามองทัน
 
-    ; --- Show Digit 2
-    mov  r25, DIG2			; Load BCD 2
-    rcall BIN_TO_7SEG		; convert bcd to 7seg
-    ; Check Meter Mode logic
-    sbrc MODE_FLAG, 0		; skip next instruction if not use meter mode
-	ori  r25, 0b10000000    ; if true, turn on dp (dot) segment
-    out  PORTD, r25			; send 7seg display
-    ldi  TEMP, 0b00000010	; Turn on digit 2
-    out  PORTC, TEMP		; send digit multiplex
+    ; --- แสดงผลหลักที่ 2
+    mov  r25, DIG2            ; โหลดค่า BCD หลักที่ 2
+    rcall BIN_TO_7SEG         
+    ; ตรวจสอบตรรกะโหมดระยะทาง (Meter Mode)
+    sbrc MODE_FLAG, 0         ; ถ้าไม่ใช่โหมด Meter ให้ข้ามคำสั่งถัดไป
+    ori  r25, 0b10000000      ; ถ้าใช่ ให้เปิดจุดทศนิยม (DP) ที่หลักนี้
+    out  PORTD, r25           
+    ldi  TEMP, 0b00000010     ; เปิดการทำงานหลักที่ 2
+    out  PORTC, TEMP          
     rcall delay_1ms
 
-    ; --- Show Digit 3
-    mov  r25, DIG3			; Load BCD 3
-    rcall BIN_TO_7SEG		; convert bcd to 7seg
-    out  PORTD, r25			; send 7seg display
-    ldi  TEMP, 0b00000100	; Turn on digit 3
-    out  PORTC, TEMP		; send digit multiplex
+    ; --- แสดงผลหลักที่ 3
+    mov  r25, DIG3            
+    rcall BIN_TO_7SEG         
+    out  PORTD, r25           
+    ldi  TEMP, 0b00000100     ; เปิดการทำงานหลักที่ 3
+    out  PORTC, TEMP          
     rcall delay_1ms
 
-    ; --- Show Digit 4
-    mov  r25, DIG4			; Load BCD 3
-    rcall BIN_TO_7SEG		; convert bcd to 7seg
-    out  PORTD, r25			; send 7seg display
-    ldi  TEMP, 0b00001000	; Turn on digit 4
-    out  PORTC, TEMP		; send digit multiplex
+    ; --- แสดงผลหลักที่ 4
+    mov  r25, DIG4            
+    rcall BIN_TO_7SEG         
+    out  PORTD, r25           
+    ldi  TEMP, 0b00001000     ; เปิดการทำงานหลักที่ 4
+    out  PORTC, TEMP          
     rcall delay_1ms
 
     pop r25
@@ -105,87 +105,97 @@ display_counter:
     ret
 
 ;------------------------------------------------
-; Interrupt Handler for PCI0
+; ส่วนจัดการอินเตอร์รัพท์ (Interrupt Handler) สำหรับ PCI0
 ;------------------------------------------------
 PinChangeInt0:
     push TEMP
-    in   TEMP, SREG
+    in   TEMP, SREG           ; เก็บค่าสถานะ Register (SREG)
     push TEMP
     push r24
     push r25
     push r26
-    ; --- 1. Check Mode Button is press
-    in   TEMP, PINB          ; TEMP <- Port B
-    sbrs TEMP, 4             ; Skip if bit PB4 is logic high
-    rjmp check_step          ; Else go to check step
-    ldi  r24, 1				 ; r24 = 1
-    eor  MODE_FLAG, r24      ; MODE_FLAG = 1 (means its is meter mode)
-    rcall UpdateDigits       ; Update Digit as Meter Unit
-    rjmp EndInt              ; End ISR
-	check_step:
-		; --- 2. Check Counter Switch is Enable
-		in   TEMP, PINB			; TEMP <- Port B
-		andi TEMP, 0b00001000	; Mask bit only PB3
-		cpi  TEMP, 0b00001000	; Check if switch PB3 is enabled
-		brne EndInt				; If not skip to End Interrupt
-		; --- 3. If enabled check value from sensor
-		rcall check_majority	; Check Majority from 3 sensors
-		cpi   r24, 1            ; Check if 1 is majority
-		brne  EndInt            ; Else jump to End Interrupt
-		; --- 4. If 1 Majority Update Counter Value
-		ldi  r24, 1				; r24 = 1
-		ldi  r25, 0				; r25 = 0
-		add  COUNTER_L, r24		; COUNTER_L = COUNTER_L + 1
-		adc  COUNTER_H, r25		; COUNTER_H = COUNTER_H + carry
-		; --- 5. Update Digits Value
-		rcall UpdateDigits		; update digit
-		rcall delay_500ms_with_display  ; delay prevent bouncing
-		; --- 6. Clear PCIFR Flag prevent 
-		ldi  TEMP, 0b00011111   ; Clear ALL PCI0 flag
-		out  PCIFR, TEMP      
-	EndInt:
-		pop  r26
-		pop  r25
-		pop  r24
-		pop  TEMP
-		out  SREG, TEMP
-		pop  TEMP
-		reti
-;------------------------------------------------
-; Subroutine: check_majority check from PB0-2
-; r25 -> Marjority Coutner
-; R23 -> Loop Counter
-; TEMP -> Input reader
-;------------------------------------------------
-check_majority:
-	push TEMP
-	push r23
-	push r24
-	push r25            
-	in   TEMP, PINB     ; TEMP <= PB0-7
-	ldi  r23, 3			; Set loop counter to 3 (have 3 sensors)  
-	clr  r25            ; Clear Majority Counter
-	clr	 r24
-	count_loop:
-		lsr TEMP		; Shift left bit to carry
-		adc r25, r24	; add carry to r25
-		dec r23			; decrement loop counter
-		brne count_loop ; Check if not reach 3 times, continue loop
-	cpi  r25, 2		; if counter >= 2 
-	brsh is_true    ; then set true       
-	ldi  r24, 0     ; else set 0
-	rjmp end_check
-	is_true:
-		ldi  r24, 1         
-	end_check:
-		pop  r25
-		pop  r24
-		pop  r23
-		pop  TEMP
-		ret
+
+    ; --- 1. ตรวจสอบว่าปุ่มเปลี่ยนโหมดถูกกดหรือไม่ (PB4)
+    in   TEMP, PINB          
+    sbrs TEMP, 4              ; ข้ามถ้าพิน PB4 เป็น High (ไม่ได้กดแบบ Active Low)
+    rjmp check_step           ; ถ้ากด ให้ไปตรวจสอบการนับก้าวต่อ
+    ldi  r24, 1               
+    eor  MODE_FLAG, r24       ; สลับโหมด (0 เป็น 1 หรือ 1 เป็น 0)
+    rcall UpdateDigits        ; อัปเดตตัวเลขตามโหมดที่เปลี่ยน
+    rjmp EndInt               ; จบการทำงานอินเตอร์รัพท์
+
+    check_step:
+        ; --- 2. ตรวจสอบว่าสวิตช์ตัวนับถูกเปิดอยู่หรือไม่ (PB3)
+        in   TEMP, PINB          
+        andi TEMP, 0b00001000    ; ตรวจสอบเฉพาะบิต PB3
+        cpi  TEMP, 0b00001000    ; เช็คว่าเป็น High หรือไม่
+        brne EndInt              ; ถ้าปิดอยู่ ให้ข้ามไปจบอินเตอร์รัพท์
+
+        ; --- 3. ตรวจสอบค่าจากเซนเซอร์ (ใช้หลักการเสียงข้างมาก)
+        rcall check_majority     ; ตรวจสอบสัญญาณจากเซนเซอร์ 3 ตัว
+        cpi   r24, 1             ; เช็คว่าผลลัพธ์ส่วนใหญ่เป็น 1 หรือไม่
+        brne  EndInt             ; ถ้าไม่ใช่ ให้ข้ามไปจบอินเตอร์รัพท์
+
+        ; --- 4. อัปเดตค่าตัวนับเมื่อสัญญาณถูกต้อง
+        ldi  r24, 1                
+        ldi  r25, 0                
+        add  COUNTER_L, r24       ; บวกค่าตัวต่ำเพิ่ม 1
+        adc  COUNTER_H, r25       ; บวกค่าตัวสูงพร้อมตัวทด (Carry)
+
+        ; --- 5. อัปเดตตัวเลขที่จะแสดงผล
+        rcall UpdateDigits        
+        rcall delay_500ms_with_display ; หน่วงเวลาเพื่อป้องกันการสั่นของสวิตช์ (Debouncing)
+
+        ; --- 6. ล้าง Flag อินเตอร์รัพท์เพื่อป้องกันการซ้อนทับ
+        ldi  TEMP, 0b00011111   
+        out  PCIFR, TEMP      
+
+    EndInt:
+        pop  r26
+        pop  r25
+        pop  r24
+        pop  TEMP
+        out  SREG, TEMP        ; คืนค่าสถานะ Register
+        pop  TEMP
+        reti
 
 ;------------------------------------------------
-; UpdateDigits: update by each digit 1-4
+; Subroutine: check_majority ตรวจสอบสัญญาณจาก PB0-2
+; r24 -> ผลลัพธ์ (1 = จริง, 0 = เท็จ)
+; r25 -> ตัวนับจำนวนที่เป็นบิต 1
+; r23 -> ตัวนับรอบลูป
+;------------------------------------------------
+check_majority:
+    push TEMP
+    push r23
+    push r25                
+    in   TEMP, PINB      ; อ่านค่าจาก Port B
+    ldi  r23, 3          ; ตั้งรอบลูป 3 ครั้ง (สำหรับเซนเซอร์ 3 ตัว)  
+    clr  r25             ; ล้างตัวนับบิต High
+    clr  r24             ; ล้างค่าคงที่สำหรับใช้บวก
+    
+    count_loop:
+        lsr TEMP         ; เลื่อนบิตขวาเข้า Carry Flag
+        adc r25, r24     ; ถ้า Carry=1 ให้บวกเข้า r25
+        dec r23          
+        brne count_loop  ; วนจนครบ 3 บิต
+    
+    cpi  r25, 2          ; ถ้ามีสัญญาณ High ตั้งแต่ 2 ตัวขึ้นไป
+    brsh is_true         ; ให้ถือว่าเป็นสัญญาณจริง
+    ldi  r24, 0          ; ถ้าไม่ถึง ให้เป็น 0
+    rjmp end_check
+    
+    is_true:
+        ldi  r24, 1          
+    
+    end_check:
+        pop  r25
+        pop  r23
+        pop  TEMP
+        ret
+
+;------------------------------------------------
+; UpdateDigits: แยกค่าตัวเลข 16 บิต ออกเป็นหลักหน่วย/สิบ/ร้อย/พัน
 ;------------------------------------------------
 UpdateDigits:
     push TEMP
@@ -194,120 +204,123 @@ UpdateDigits:
     push r23       
     push r24
     push r25
-    ; --- 1. Check Mode Step/Meter
-    sbrs MODE_FLAG, 0   ; if mode=0 (step) jump to start_bcd
+    
+    ; --- 1. ตรวจสอบโหมด Step หรือ Meter
+    sbrs MODE_FLAG, 0   ; ถ้า mode=0 (Step) ให้ข้ามไปเริ่มแปลง BCD เลย
     rjmp start_bcd
 
-    ; --- 1.1. Meter Mode: Multiply with 6 (Assume 1 step = 0.6 Meter)
-    mov r24, COUNTER_L	; r24 = COUNTER_L
-    mov r25, COUNTER_H	; r25 = COUNTER_H
-    ldi r23, 5          ; loop counter= 5
-	mul_loop:
-		add COUNTER_L, r24	; COUNTER_L = COUNTER_L + COUNTER_L
-		adc COUNTER_H, r25	; COUNTER_H = COUNTER_H + COUNTER_H + carry
-		dec r23				; decrement loop counter
-		brne mul_loop		; jump if loop not finished
+    ; --- 1.1 โหมด Meter: คูณด้วย 6 (สมมติ 1 ก้าว = 0.6 เมตร)
+    mov r24, COUNTER_L    
+    mov r25, COUNTER_H    
+    ldi r23, 5          ; วนลูปบวกเพิ่ม 5 ครั้ง (เพื่อให้รวมของเดิมเป็น 6 เท่า)
+    mul_loop:
+        add COUNTER_L, r24    
+        adc COUNTER_H, r25    
+        dec r23                
+        brne mul_loop        
 
-	start_bcd:				; Clear DIG1-4
-		clr DIG4
-		clr DIG3
-		clr DIG2
-		clr DIG1
-	
-	; --- Extract Thousands ---
-	L4: ldi  r16, low(1000)	; Load low byte of 1000 into r16
-		ldi  r23, high(1000); Load high byte of 1000 into r23
-		cp   r17, r16		; Compare r17 (low byte) with low(1000)
-		cpc  r18, r23		; Compare r18 (high byte) with high(1000) including carry
-		brlo L3				; If value < 1000, jump to hundreds (L3)
-		sub  r17, r16		; ElseSubtract 1000 low byte from r17
-		sbc  r18, r23		; Subtract 1000 high byte from r18 with borrow
-		inc  DIG4			; Increment thousands counter
-		rjmp L4				; ; Repeat loop for next 1000
+    start_bcd:                ; ล้างค่าหลักตัวเลขทั้ง 4 ก่อนเริ่มคำนวณ
+        clr DIG4
+        clr DIG3
+        clr DIG2
+        clr DIG1
+    
+    ; --- แยกหลักพัน ---
+    L4: ldi  r16, low(1000)   
+        ldi  r23, high(1000)
+        cp   r17, r16        
+        cpc  r18, r23        
+        brlo L3               ; ถ้าค่าน้อยกว่า 1000 ให้ไปคำนวณหลักร้อย
+        sub  r17, r16        
+        sbc  r18, r23        
+        inc  DIG4             ; เพิ่มค่าหลักพัน
+        rjmp L4               
 
-	; --- Extract Hundreds ---
-	L3: ldi  r16, 100           ; Load 100 into r16
-		cp   r17, r16           ; Compare r17 (low byte) with 100
-		ldi  r23, 0             ; Load 0 into r23 for high byte comparison
-		cpc  r18, r23           ; Compare r18 (high byte) with 0 including carry
-		brlo L2                 ; If value < 100, jump to tens (L2)
-		sub  r17, r16           ; Subtract 100 from r17
-		sbc  r18, r23           ; Subtract borrow from r18
-		inc  DIG3               ; Increment hundreds counter
-		rjmp L3                 ; Repeat loop for next 100
+    ; --- แยกหลักร้อย ---
+    L3: ldi  r16, 100          
+        cp   r17, r16           
+        ldi  r23, 0             
+        cpc  r18, r23           
+        brlo L2               ; ถ้าค่าน้อยกว่า 100 ให้ไปคำนวณหลักสิบ
+        sub  r17, r16           
+        sbc  r18, r23           
+        inc  DIG3             
+        rjmp L3                 
 
-    ; --- Extract Tens ---
-	L2: ldi  r16, 10            ; Load 10 into r16
-		cp   r17, r16           ; Compare r17 (low byte) with 10
-		ldi  r23, 0             ; Load 0 into r23 for high byte comparison
-		cpc  r18, r23           ; Compare r18 (high byte) with 0 including carry
-		brlo L1                 ; If value < 10, jump to units (L1)
-		sub  r17, r16           ; Subtract 10 from r17
-		sbc  r18, r23           ; Subtract borrow from r18
-		inc  DIG2               ; Increment tens counter
-		rjmp L2                 ; Repeat loop for next 10
+    ; --- แยกหลักสิบ ---
+    L2: ldi  r16, 10            
+        cp   r17, r16           
+        ldi  r23, 0             
+        cpc  r18, r23           
+        brlo L1               ; ถ้าค่าน้อยกว่า 10 ให้ไปคำนวณหลักหน่วย
+        sub  r17, r16           
+        sbc  r18, r23           
+        inc  DIG2             
+        rjmp L2                 
 
-    ; --- Extract Units ---
-	L1: mov  DIG1, r17          ; Remaining value in r17 is the units digit (0-9)
+    ; --- แยกหลักหน่วย ---
+    L1: mov  DIG1, r17          ; ค่าที่เหลืออยู่ใน r17 คือหลักหน่วย
 
-	pop  r25            
-	pop  r24
-	pop  r23
-	pop  COUNTER_H
-	pop  COUNTER_L
-	pop  TEMP
-	ret
+    pop  r25            
+    pop  r24
+    pop  r23
+    pop  COUNTER_H
+    pop  COUNTER_L
+    pop  TEMP
+    ret
 
 ;------------------------------------------------
-; Delay Subroutine
+; ฟังก์ชันหน่วงเวลา (สำหรับ CPU 16 MHz)
 ;------------------------------------------------
 delay_500ms_with_display:
-    ldi  r26, 50				; Loop 50 time
-	d_step1:
-		push r26				; 2 clk cycle
-		rcall display_counter	; 4ms (While doing delay also run refresh digit)
-		pop  r26				; 2 clk cycle
-		dec  r26				; 1 clk cycle
-		brne d_step1			; 1 clk cyle
-		ret
+    push r26
+    ldi  r26, 50              ; วนรอบ 50 ครั้ง
+    d_step1:
+        push r26                
+        rcall display_counter ; ในขณะหน่วงเวลา ให้เรียกแสดงผลไปด้วยเพื่อไม่ให้ไฟดับ
+        pop  r26                
+        dec  r26                
+        brne d_step1            
+    pop r26
+    ret
 
 delay_1ms:
-	push r24
-	push r23
+    push r24
+    push r23
     ldi  r24, 20
-	d1: ldi  r23, 255
-	d2: dec  r23
-		brne d2
-		dec  r24
-		brne d1
-	pop r23
-	pop r24
-	ret
+    d1: ldi  r23, 255
+    d2: dec  r23
+        brne d2
+        dec  r24
+        brne d1
+    pop r23
+    pop r24
+    ret
 
 ;------------------------------------------------
-; Binary (BCD) to 7 Segment
-; r25 is both input and output
+; แปลงค่าตัวเลข (BCD) เป็นรหัสสำหรับ 7 Segment
+; r25 เป็นทั้ง Input (ตัวเลข 0-9) และ Output
 ;------------------------------------------------
 BIN_TO_7SEG:
     push ZL
     push ZH
     push r0
-	clr r0
-	rjmp LOOK_TABLE		; call table
-	TB_7SEG:
-		.DB 0b00111111, 0b00000110	; 0, 1
-		.DB 0b01011011, 0b01001111	; 2, 3
-		.DB 0b01100110, 0b01101101	; 4, 5
-		.DB 0b01111101, 0b00000111	; 6, 7
-		.DB 0b01111111, 0b01101111	; 8, 9
-	LOOK_TABLE:
-		ldi ZL, low(TB_7SEG*2)	; set lower address of TB_7SEG to ZL
-		ldi ZH, high(TB_7SEG*2)	; set higher address of TB_7SEG to ZH
-		add ZL, r25				; ZL <- ZL + r25 
-		adc ZH, r0				; ZH <- ZH + r0 + carry
-		lpm r0, Z				; load program memmory Z to r0
-		mov r25, r0				; z25 <- r0
-	pop r0
-	pop ZH
-	pop ZL
-	ret
+    clr r0
+    rjmp LOOK_TABLE        ; ข้ามส่วนข้อมูลไปยังส่วนดึงค่า
+    TB_7SEG:
+        .DB 0b00111111, 0b00000110    ; เลข 0, 1
+        .DB 0b01011011, 0b01001111    ; เลข 2, 3
+        .DB 0b01100110, 0b01101101    ; เลข 4, 5
+        .DB 0b01111101, 0b00000111    ; เลข 6, 7
+        .DB 0b01111111, 0b01101111    ; เลข 8, 9
+    LOOK_TABLE:
+        ldi ZL, low(TB_7SEG*2)    ; ชี้ไปที่ตำแหน่งเริ่มต้นของตารางข้อมูล
+        ldi ZH, high(TB_7SEG*2)    
+        add ZL, r25               ; บวกค่าตัวเลขเพื่อเลื่อนไปยังตำแหน่งรหัสที่ต้องการ
+        adc ZH, r0                ; บวกตัวทด
+        lpm r0, Z                 ; โหลดข้อมูลจาก Program Memory เข้า r0
+        mov r25, r0               ; คืนค่ารหัสที่ได้กลับทาง r25
+    pop r0
+    pop ZH
+    pop ZL
+    ret
