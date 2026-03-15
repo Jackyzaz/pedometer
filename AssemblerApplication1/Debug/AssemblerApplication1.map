@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm Sun Mar 15 17:24:07 2026
+AVRASM ver. 2.2.8  C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm Sun Mar 15 20:46:33 2026
 
 
 EQU  SIGNATURE_000 0000001e
@@ -705,27 +705,26 @@ DEF  DIG3         r21
 DEF  DIG4         r22
 CSEG start        00000007
 CSEG PinChangeInt0 0000003f
-CSEG UpdateDigits 0000007d
+CSEG UpdateDigits 00000078
 CSEG main_loop    0000001e
 CSEG display_counter 00000020
-CSEG BIN_TO_7SEG  000000bc
+CSEG BIN_TO_7SEG  000000c0
 CSEG delay_1ms    000000b5
 CSEG check_step   0000004c
 CSEG EndInt       0000005b
 CSEG check_majority 00000062
-CSEG delay_500ms_with_display 00000076
-CSEG count_loop   00000068
-CSEG skip_inc     0000006b
-CSEG is_true      00000071
-CSEG end_check    00000072
-CSEG d_step1      00000077
-CSEG start_bcd    0000008e
-CSEG mul_loop     0000008a
-CSEG L4           00000092
-CSEG L3           0000009b
-CSEG L2           000000a4
-CSEG L1           000000ad
-CSEG d1           000000b6
-CSEG d2           000000b7
-CSEG LOOK_TABLE   000000c6
-CSEG TB_7SEG      000000c1
+CSEG delay_500ms_with_display 000000ae
+CSEG count_loop   0000006a
+CSEG is_true      00000072
+CSEG end_check    00000073
+CSEG start_bcd    00000087
+CSEG mul_loop     00000083
+CSEG L4           0000008b
+CSEG L3           00000094
+CSEG L2           0000009d
+CSEG L1           000000a6
+CSEG d_step1      000000af
+CSEG d1           000000b8
+CSEG d2           000000b9
+CSEG LOOK_TABLE   000000ca
+CSEG TB_7SEG      000000c5

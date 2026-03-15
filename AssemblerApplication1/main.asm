@@ -114,7 +114,6 @@ PinChangeInt0:
     push r24
     push r25
     push r26
-
     ; --- 1. Check Mode Button is press
     in   TEMP, PINB          ; TEMP <- Port B
     sbrs TEMP, 4             ; Skip if bit PB4 is logic high
@@ -123,32 +122,27 @@ PinChangeInt0:
     eor  MODE_FLAG, r24      ; MODE_FLAG = 1 (means its is meter mode)
     rcall UpdateDigits       ; Update Digit as Meter Unit
     rjmp EndInt              ; End ISR
-
 	check_step:
 		; --- 2. Check Counter Switch is Enable
-		in   TEMP, PINB
-		andi TEMP, 0b00001000  ; Check PB03
-		cpi  TEMP, 0b00001000  ; Check if PB03 enabled
-		brne EndInt            ; If not skip to end Interrupt
-
-		; Check Majority from 3 sensors
-		rcall check_majority
-		cpi   r24, 1            ; ดูว่าผลลัพธ์เป็น 1 (Majority High) หรือไม่
-		brne  EndInt            ; ถ้าไม่ใช่ ให้กระโดดไปจบ Interrupt ทันที
-
-		; --- ส่วนนับก้าว (ทำงานเมื่อเป็นเสียงส่วนใหญ่เท่านั้น) ---
-		ldi  r24, 1          
-		ldi  r25, 0          
-		add  COUNTER_L, r24  
-		adc  COUNTER_H, r25  
-
-		rcall UpdateDigits  
-		rcall delay_500ms_with_display  
-
-		; ล้าง Flag เพื่อป้องกันการเด้งซ้ำจาก Noise
-		ldi  TEMP, 0b00011111   ; *** แก้ครอบคลุม Flag PB4 ด้วย ***
+		in   TEMP, PINB			; TEMP <- Port B
+		andi TEMP, 0b00001000	; Mask bit only PB3
+		cpi  TEMP, 0b00001000	; Check if switch PB3 is enabled
+		brne EndInt				; If not skip to End Interrupt
+		; --- 3. If enabled check value from sensor
+		rcall check_majority	; Check Majority from 3 sensors
+		cpi   r24, 1            ; Check if 1 is majority
+		brne  EndInt            ; Else jump to End Interrupt
+		; --- 4. If 1 Majority Update Counter Value
+		ldi  r24, 1				; r24 = 1
+		ldi  r25, 0				; r25 = 0
+		add  COUNTER_L, r24		; COUNTER_L = COUNTER_L + 1
+		adc  COUNTER_H, r25		; COUNTER_H = COUNTER_H + carry
+		; --- 5. Update Digits Value
+		rcall UpdateDigits		; update digit
+		rcall delay_500ms_with_display  ; delay prevent bouncing
+		; --- 6. Clear PCIFR Flag prevent 
+		ldi  TEMP, 0b00011111   ; Clear ALL PCI0 flag
 		out  PCIFR, TEMP      
-
 	EndInt:
 		pop  r26
 		pop  r25
@@ -157,113 +151,113 @@ PinChangeInt0:
 		out  SREG, TEMP
 		pop  TEMP
 		reti
-
-	;------------------------------------------------
-	; Subroutine: check_majority check from PB0-2
-	; r25 -> Marjority Coutner
-	; R23 -> Loop Counter
-	; TEMP -> Input reader
-	;------------------------------------------------
-	check_majority:
-		push TEMP
-		push r23
-		push r25            
-		in   TEMP, PINB     ; TEMP <= xxxxx:PB0:PB:1PB2
-		ldi  r23, 3			; Set loop Counter to 3 (have 3 sensors)  
-		clr  r25            ; Clear Majority Counter
-		count_loop:
-			lsr  TEMP		; Shift left bit to carry
-			brcc skip_inc	
-			inc  r25
-			skip_inc:
-				dec  r23
-				brne count_loop ; Check if not reach 3 times, continue loop
-		cpi  r25, 2		; if counter >= 2 
-		brsh is_true    ; then set true       
-		ldi  r24, 0     ; else set 0
-		rjmp end_check
-		is_true:
-			ldi  r24, 1         
-		end_check:
-			pop  r25
-			pop  r23
-			pop  TEMP
-			ret
-
-
+;------------------------------------------------
+; Subroutine: check_majority check from PB0-2
+; r25 -> Marjority Coutner
+; R23 -> Loop Counter
+; TEMP -> Input reader
+;------------------------------------------------
+check_majority:
+	push TEMP
+	push r23
+	push r24
+	push r25            
+	in   TEMP, PINB     ; TEMP <= PB0-7
+	ldi  r23, 3			; Set loop counter to 3 (have 3 sensors)  
+	clr  r25            ; Clear Majority Counter
+	clr	 r24
+	count_loop:
+		lsr TEMP		; Shift left bit to carry
+		adc r25, r24	; add carry to r25
+		dec r23			; decrement loop counter
+		brne count_loop ; Check if not reach 3 times, continue loop
+	cpi  r25, 2		; if counter >= 2 
+	brsh is_true    ; then set true       
+	ldi  r24, 0     ; else set 0
+	rjmp end_check
+	is_true:
+		ldi  r24, 1         
+	end_check:
+		pop  r25
+		pop  r24
+		pop  r23
+		pop  TEMP
+		ret
 
 ;------------------------------------------------
-; อัปเดตตัวเลขแยกหลัก
+; UpdateDigits: update by each digit 1-4
 ;------------------------------------------------
 UpdateDigits:
-    push r16
-    push r17
-    push r18
-    push r23            ; *** push เพิ่มสำหรับใช้คูณ ***
+    push TEMP
+    push COUNTER_L
+    push COUNTER_H
+    push r23       
     push r24
     push r25
-
-    mov r17, COUNTER_L
-    mov r18, COUNTER_H
-
-    ; *** ตรวจสอบโหมด ***
-    sbrs MODE_FLAG, 0   ; ถ้าโหมดก้าว (0) ให้ข้ามไปแยกหลัก BCD เลย
+    ; --- 1. Check Mode Step/Meter
+    sbrs MODE_FLAG, 0   ; if mode=0 (step) jump to start_bcd
     rjmp start_bcd
 
-    ; โหมดเมตร: คูณจำนวนก้าวด้วย 7 (1 ก้าว = 0.6 เมตร)
-    mov r24, r17
-    mov r25, r18
-    ldi r23, 5          ; นำมาบวกทบกัน 5 ครั้ง (รวมตัวมันเอง = 6)
+    ; --- 1.1. Meter Mode: Multiply with 6 (Assume 1 step = 0.6 Meter)
+    mov r24, COUNTER_L	; r24 = COUNTER_L
+    mov r25, COUNTER_H	; r25 = COUNTER_H
+    ldi r23, 5          ; loop counter= 5
 	mul_loop:
-		add r17, r24
-		adc r18, r25
-		dec r23
-		brne mul_loop
+		add COUNTER_L, r24	; COUNTER_L = COUNTER_L + COUNTER_L
+		adc COUNTER_H, r25	; COUNTER_H = COUNTER_H + COUNTER_H + carry
+		dec r23				; decrement loop counter
+		brne mul_loop		; jump if loop not finished
 
-	start_bcd:
+	start_bcd:				; Clear DIG1-4
 		clr DIG4
 		clr DIG3
 		clr DIG2
 		clr DIG1
+	
+	; --- Extract Thousands ---
+	L4: ldi  r16, low(1000)	; Load low byte of 1000 into r16
+		ldi  r23, high(1000); Load high byte of 1000 into r23
+		cp   r17, r16		; Compare r17 (low byte) with low(1000)
+		cpc  r18, r23		; Compare r18 (high byte) with high(1000) including carry
+		brlo L3				; If value < 1000, jump to hundreds (L3)
+		sub  r17, r16		; ElseSubtract 1000 low byte from r17
+		sbc  r18, r23		; Subtract 1000 high byte from r18 with borrow
+		inc  DIG4			; Increment thousands counter
+		rjmp L4				; ; Repeat loop for next 1000
 
-	L4: ldi  r16, low(1000)
-		ldi  r23, high(1000)
-		cp   r17, r16
-		cpc  r18, r23
-		brlo L3
-		sub  r17, r16
-		sbc  r18, r23
-		inc  DIG4
-		rjmp L4
+	; --- Extract Hundreds ---
+	L3: ldi  r16, 100           ; Load 100 into r16
+		cp   r17, r16           ; Compare r17 (low byte) with 100
+		ldi  r23, 0             ; Load 0 into r23 for high byte comparison
+		cpc  r18, r23           ; Compare r18 (high byte) with 0 including carry
+		brlo L2                 ; If value < 100, jump to tens (L2)
+		sub  r17, r16           ; Subtract 100 from r17
+		sbc  r18, r23           ; Subtract borrow from r18
+		inc  DIG3               ; Increment hundreds counter
+		rjmp L3                 ; Repeat loop for next 100
 
-	L3: ldi  r16, 100
-		cp   r17, r16
-		ldi  r23, 0
-		cpc  r18, r23
-		brlo L2
-		sub  r17, r16
-		sbc  r18, r23
-		inc  DIG3
-		rjmp L3
+    ; --- Extract Tens ---
+	L2: ldi  r16, 10            ; Load 10 into r16
+		cp   r17, r16           ; Compare r17 (low byte) with 10
+		ldi  r23, 0             ; Load 0 into r23 for high byte comparison
+		cpc  r18, r23           ; Compare r18 (high byte) with 0 including carry
+		brlo L1                 ; If value < 10, jump to units (L1)
+		sub  r17, r16           ; Subtract 10 from r17
+		sbc  r18, r23           ; Subtract borrow from r18
+		inc  DIG2               ; Increment tens counter
+		rjmp L2                 ; Repeat loop for next 10
 
-	L2: ldi  r16, 10
-		cp   r17, r16
-		ldi  r23, 0
-		cpc  r18, r23
-		brlo L1
-		sub  r17, r16
-		sbc  r18, r23
-		inc  DIG2
-		rjmp L2
+    ; --- Extract Units ---
+	L1: mov  DIG1, r17          ; Remaining value in r17 is the units digit (0-9)
 
-	L1: mov  DIG1, r17
-		pop  r25            ; *** pop คืนให้ครบ ***
-		pop  r24
-		pop  r23
-		pop  r18
-		pop  r17
-		pop  r16
-		ret
+	pop  r25            
+	pop  r24
+	pop  r23
+	pop  COUNTER_H
+	pop  COUNTER_L
+	pop  TEMP
+	ret
+
 ;------------------------------------------------
 ; Delay Subroutine
 ;------------------------------------------------
@@ -280,18 +274,15 @@ delay_500ms_with_display:
 delay_1ms:
 	push r24
 	push r23
-
     ldi  r24, 20
-d1: ldi  r23, 255
-d2: dec  r23
-    brne d2
-    dec  r24
-    brne d1
-    
+	d1: ldi  r23, 255
+	d2: dec  r23
+		brne d2
+		dec  r24
+		brne d1
 	pop r23
 	pop r24
 	ret
-
 
 ;------------------------------------------------
 ; Binary (BCD) to 7 Segment
@@ -301,17 +292,14 @@ BIN_TO_7SEG:
     push ZL
     push ZH
     push r0
-	
 	clr r0
 	rjmp LOOK_TABLE		; call table
-	
 	TB_7SEG:
 		.DB 0b00111111, 0b00000110	; 0, 1
 		.DB 0b01011011, 0b01001111	; 2, 3
 		.DB 0b01100110, 0b01101101	; 4, 5
 		.DB 0b01111101, 0b00000111	; 6, 7
 		.DB 0b01111111, 0b01101111	; 8, 9
-
 	LOOK_TABLE:
 		ldi ZL, low(TB_7SEG*2)	; set lower address of TB_7SEG to ZL
 		ldi ZH, high(TB_7SEG*2)	; set higher address of TB_7SEG to ZH
@@ -319,7 +307,6 @@ BIN_TO_7SEG:
 		adc ZH, r0				; ZH <- ZH + r0 + carry
 		lpm r0, Z				; load program memmory Z to r0
 		mov r25, r0				; z25 <- r0
-    
 	pop r0
 	pop ZH
 	pop ZL

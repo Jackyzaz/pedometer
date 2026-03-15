@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm Sun Mar 15 17:24:07 2026
+AVRASM ver. 2.2.8  C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm Sun Mar 15 20:46:33 2026
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
 C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm(1): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328pdef.inc'
@@ -1085,7 +1085,7 @@ C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplic
 00001b 24ff                          clr MODE_FLAG			; Set Mode flag to counter mode
                                  
                                  	; 6. Start 7 Segment Display
-00001c d060                          rcall UpdateDigits			
+00001c d05b                          rcall UpdateDigits			
 00001d 9478                      	sei
                                  
                                  main_loop:
@@ -1096,39 +1096,39 @@ C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplic
 000020 930f                          push TEMP
 000021 939f                          push r25
                                  
-                                     ; Show Digit 1
+                                     ; --- Show Digit 1
 000022 2f93                          mov  r25, DIG1			; Load BCD 1
-000023 d098                          rcall BIN_TO_7SEG	
-000024 b99b                          out  PORTD, r25			
-000025 e001                          ldi  TEMP, 0b00000001	; Turn on Digit
-000026 b908                          out  PORTC, TEMP
-000027 d08d                          rcall delay_1ms
+000023 d09c                          rcall BIN_TO_7SEG		; convert bcd to 7seg
+000024 b99b                          out  PORTD, r25			; send 7seg display
+000025 e001                          ldi  TEMP, 0b00000001	; Turn on digit 1
+000026 b908                          out  PORTC, TEMP		; send digit multiplex
+000027 d08d                          rcall delay_1ms			
                                  
-                                     ; Show Digit 2
-000028 2f94                          mov  r25, DIG2
-000029 d092                          rcall BIN_TO_7SEG
-                                     ; *** แทรกการแสดงจุดทศนิยมเมื่ออยู่โหมดเมตร ***
-00002a fcf0                          sbrc MODE_FLAG, 0        ; ถ้าเป็นโหมด 1 (เมตร) ให้ทำบรรทัดถัดไป
-00002b 6890                          ori  r25, 0b10000000     ; เปิดบิต 7 ของ Port D ให้จุดทศนิยมติด
-00002c b99b                          out  PORTD, r25
-00002d e002                          ldi  TEMP, 0b00000010
-00002e b908                          out  PORTC, TEMP
+                                     ; --- Show Digit 2
+000028 2f94                          mov  r25, DIG2			; Load BCD 2
+000029 d096                          rcall BIN_TO_7SEG		; convert bcd to 7seg
+                                     ; Check Meter Mode logic
+00002a fcf0                          sbrc MODE_FLAG, 0		; skip next instruction if not use meter mode
+00002b 6890                      	ori  r25, 0b10000000    ; if true, turn on dp (dot) segment
+00002c b99b                          out  PORTD, r25			; send 7seg display
+00002d e002                          ldi  TEMP, 0b00000010	; Turn on digit 2
+00002e b908                          out  PORTC, TEMP		; send digit multiplex
 00002f d085                          rcall delay_1ms
                                  
-                                     ; --- แสดงหลักที่ 3 (ร้อย) ---
-000030 2f95                          mov  r25, DIG3
-000031 d08a                          rcall BIN_TO_7SEG
-000032 b99b                          out  PORTD, r25
-000033 e004                          ldi  TEMP, 0b00000100
-000034 b908                          out  PORTC, TEMP
+                                     ; --- Show Digit 3
+000030 2f95                          mov  r25, DIG3			; Load BCD 3
+000031 d08e                          rcall BIN_TO_7SEG		; convert bcd to 7seg
+000032 b99b                          out  PORTD, r25			; send 7seg display
+000033 e004                          ldi  TEMP, 0b00000100	; Turn on digit 3
+000034 b908                          out  PORTC, TEMP		; send digit multiplex
 000035 d07f                          rcall delay_1ms
                                  
-                                     ; --- แสดงหลักที่ 4 (พัน) ---
-000036 2f96                          mov  r25, DIG4
-000037 d084                          rcall BIN_TO_7SEG
-000038 b99b                          out  PORTD, r25
-000039 e008                          ldi  TEMP, 0b00001000
-00003a b908                          out  PORTC, TEMP
+                                     ; --- Show Digit 4
+000036 2f96                          mov  r25, DIG4			; Load BCD 3
+000037 d088                          rcall BIN_TO_7SEG		; convert bcd to 7seg
+000038 b99b                          out  PORTD, r25			; send 7seg display
+000039 e008                          ldi  TEMP, 0b00001000	; Turn on digit 4
+00003a b908                          out  PORTC, TEMP		; send digit multiplex
 00003b d079                          rcall delay_1ms
                                  
 00003c 919f                          pop r25
@@ -1136,7 +1136,7 @@ C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplic
 00003e 9508                          ret
                                  
                                  ;------------------------------------------------
-                                 ; Interrupt Handler: สำหรับนับก้าวและสลับโหมด
+                                 ; Interrupt Handler for PCI0
                                  ;------------------------------------------------
                                  PinChangeInt0:
 00003f 930f                          push TEMP
@@ -1145,43 +1145,35 @@ C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplic
 000042 938f                          push r24
 000043 939f                          push r25
 000044 93af                          push r26
-                                 
-                                     ; === 1. ตรวจสอบการสลับโหมด PB4 ===
-000045 b103                          in   TEMP, PINB          ; อ่านค่าพอร์ตปัจจุบัน
-000046 ff04                          sbrs TEMP, 4             ; ข้ามคำสั่งถัดไปถ้าบิต 4 เป็น 1 (Skip if Bit Set)
-000047 c004                          rjmp check_step          ; ถ้าบิต 4 เป็น 0 (ปล่อยปุ่ม/ขาลง) ให้ไปเช็คการนับก้าว
-                                 
-                                     ; ถ้าหลุดมาถึงตรงนี้ แสดงว่าเป็นขาขึ้น (กดปุ่ม)
-000048 e081                          ldi  r24, 1
-000049 26f8                          eor  MODE_FLAG, r24      ; สลับโหมด
-00004a d032                          rcall UpdateDigits       ; อัปเดตการแสดงผล
-00004b c00f                          rjmp EndInt              ; จบการทำงานทันที (ป้องกันการซ้อนทับ)
-                                 
+                                     ; --- 1. Check Mode Button is press
+000045 b103                          in   TEMP, PINB          ; TEMP <- Port B
+000046 ff04                          sbrs TEMP, 4             ; Skip if bit PB4 is logic high
+000047 c004                          rjmp check_step          ; Else go to check step
+000048 e081                          ldi  r24, 1				 ; r24 = 1
+000049 26f8                          eor  MODE_FLAG, r24      ; MODE_FLAG = 1 (means its is meter mode)
+00004a d02d                          rcall UpdateDigits       ; Update Digit as Meter Unit
+00004b c00f                          rjmp EndInt              ; End ISR
                                  	check_step:
-                                 		; --- Check Counter Switch is Enable
-00004c b103                      		in   TEMP, PINB
-00004d 7008                      		andi TEMP, 0b00001000  ; Check PB03
-00004e 3008                      		cpi  TEMP, 0b00001000  ; Check if PB03 enabled
-00004f f459                      		brne EndInt            ; If not skip to end Interrupt
-                                 
-                                 		; Check Majority from 3 sensors
-000050 d011                      		rcall check_majority
-000051 3081                      		cpi   r24, 1            ; ดูว่าผลลัพธ์เป็น 1 (Majority High) หรือไม่
-000052 f441                      		brne  EndInt            ; ถ้าไม่ใช่ ให้กระโดดไปจบ Interrupt ทันที
-                                 
-                                 		; --- ส่วนนับก้าว (ทำงานเมื่อเป็นเสียงส่วนใหญ่เท่านั้น) ---
-000053 e081                      		ldi  r24, 1          
-000054 e090                      		ldi  r25, 0          
-000055 0f18                      		add  COUNTER_L, r24  
-000056 1f29                      		adc  COUNTER_H, r25  
-                                 
-000057 d025                      		rcall UpdateDigits  
-000058 d01d                      		rcall delay_500ms_with_display  
-                                 
-                                 		; ล้าง Flag เพื่อป้องกันการเด้งซ้ำจาก Noise
-000059 e10f                      		ldi  TEMP, 0b00011111   ; *** แก้ครอบคลุม Flag PB4 ด้วย ***
+                                 		; --- 2. Check Counter Switch is Enable
+00004c b103                      		in   TEMP, PINB			; TEMP <- Port B
+00004d 7008                      		andi TEMP, 0b00001000	; Mask bit only PB3
+00004e 3008                      		cpi  TEMP, 0b00001000	; Check if switch PB3 is enabled
+00004f f459                      		brne EndInt				; If not skip to End Interrupt
+                                 		; --- 3. If enabled check value from sensor
+000050 d011                      		rcall check_majority	; Check Majority from 3 sensors
+000051 3081                      		cpi   r24, 1            ; Check if 1 is majority
+000052 f441                      		brne  EndInt            ; Else jump to End Interrupt
+                                 		; --- 4. If 1 Majority Update Counter Value
+000053 e081                      		ldi  r24, 1				; r24 = 1
+000054 e090                      		ldi  r25, 0				; r25 = 0
+000055 0f18                      		add  COUNTER_L, r24		; COUNTER_L = COUNTER_L + 1
+000056 1f29                      		adc  COUNTER_H, r25		; COUNTER_H = COUNTER_H + carry
+                                 		; --- 5. Update Digits Value
+000057 d020                      		rcall UpdateDigits		; update digit
+000058 d055                      		rcall delay_500ms_with_display  ; delay prevent bouncing
+                                 		; --- 6. Clear PCIFR Flag prevent 
+000059 e10f                      		ldi  TEMP, 0b00011111   ; Clear ALL PCI0 flag
 00005a bb0b                      		out  PCIFR, TEMP      
-                                 
                                  	EndInt:
 00005b 91af                      		pop  r26
 00005c 919f                      		pop  r25
@@ -1190,162 +1182,171 @@ C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplic
 00005f bf0f                      		out  SREG, TEMP
 000060 910f                      		pop  TEMP
 000061 9518                      		reti
-                                 
-                                 	;------------------------------------------------
-                                 	; Subroutine: check_majority check from PB0-2
-                                 	; r25 -> Marjority Coutner
-                                 	; R23 -> Loop Counter
-                                 	; TEMP -> Input reader
-                                 	;------------------------------------------------
-                                 	check_majority:
-000062 930f                      		push TEMP
-000063 937f                      		push r23
-000064 939f                      		push r25            
-000065 b103                      		in   TEMP, PINB     ; TEMP <= xxxxx:PB0:PB:1PB2
-000066 e073                      		ldi  r23, 3			; Set loop Counter to 3 (have 3 sensors)  
-000067 2799                      		clr  r25            ; Clear Majority Counter
-                                 		count_loop:
-000068 9506                      			lsr  TEMP		; Shift left bit to carry
-000069 f408                      			brcc skip_inc	
-00006a 9593                      			inc  r25
-                                 			skip_inc:
-00006b 957a                      				dec  r23
-00006c f7d9                      				brne count_loop ; Check if not reach 3 times, continue loop
-00006d 3092                      		cpi  r25, 2		; if counter >= 2 
-00006e f410                      		brsh is_true    ; then set true       
-00006f e080                      		ldi  r24, 0     ; else set 0
-000070 c001                      		rjmp end_check
-                                 		is_true:
-000071 e081                      			ldi  r24, 1         
-                                 		end_check:
-000072 919f                      			pop  r25
-000073 917f                      			pop  r23
-000074 910f                      			pop  TEMP
-000075 9508                      			ret
-                                 
                                  ;------------------------------------------------
-                                 ; Delay 500ms with Refresh 7 Segment Display
+                                 ; Subroutine: check_majority check from PB0-2
+                                 ; r25 -> Marjority Coutner
+                                 ; R23 -> Loop Counter
+                                 ; TEMP -> Input reader
                                  ;------------------------------------------------
-                                 delay_500ms_with_display:
-000076 e3a2                          ldi  r26, 50				; Loop 50 time
-                                 	d_step1:
-000077 93af                      		push r26				; 2 clk cycle
-000078 dfa7                      		rcall display_counter	; 4ms (While doing delay also run refresh digit)
-000079 91af                      		pop  r26				; 2 clk cycle
-00007a 95aa                      		dec  r26				; 1 clk cycle
-00007b f7d9                      		brne d_step1			; 1 clk cyle
-00007c 9508                      		ret
+                                 check_majority:
+000062 930f                      	push TEMP
+000063 937f                      	push r23
+000064 938f                      	push r24
+000065 939f                      	push r25            
+000066 b103                      	in   TEMP, PINB     ; TEMP <= PB0-7
+000067 e073                      	ldi  r23, 3			; Set loop counter to 3 (have 3 sensors)  
+000068 2799                      	clr  r25            ; Clear Majority Counter
+000069 2788                      	clr	 r24
+                                 	count_loop:
+00006a 9506                      		lsr TEMP		; Shift left bit to carry
+00006b 1f98                      		adc r25, r24	; add carry to r25
+00006c 957a                      		dec r23			; decrement loop counter
+00006d f7e1                      		brne count_loop ; Check if not reach 3 times, continue loop
+00006e 3092                      	cpi  r25, 2		; if counter >= 2 
+00006f f410                      	brsh is_true    ; then set true       
+000070 e080                      	ldi  r24, 0     ; else set 0
+000071 c001                      	rjmp end_check
+                                 	is_true:
+000072 e081                      		ldi  r24, 1         
+                                 	end_check:
+000073 919f                      		pop  r25
+000074 918f                      		pop  r24
+000075 917f                      		pop  r23
+000076 910f                      		pop  TEMP
+000077 9508                      		ret
                                  
                                  ;------------------------------------------------
-                                 ; อัปเดตตัวเลขแยกหลัก
+                                 ; UpdateDigits: update by each digit 1-4
                                  ;------------------------------------------------
                                  UpdateDigits:
-00007d 930f                          push r16
-00007e 931f                          push r17
-00007f 932f                          push r18
-000080 937f                          push r23            ; *** push เพิ่มสำหรับใช้คูณ ***
-000081 938f                          push r24
-000082 939f                          push r25
+000078 930f                          push r16
+000079 931f                          push r17
+00007a 932f                          push r18
+00007b 937f                          push r23       
+00007c 938f                          push r24
+00007d 939f                          push r25
                                  
-000083 2f11                          mov r17, COUNTER_L
-000084 2f22                          mov r18, COUNTER_H
+                                 	; --- 1. Load r17:r18
+                                     ;mov r17, COUNTER_L
+                                     ;mov r18, COUNTER_H
                                  
                                      ; *** ตรวจสอบโหมด ***
-000085 fef0                          sbrs MODE_FLAG, 0   ; ถ้าโหมดก้าว (0) ให้ข้ามไปแยกหลัก BCD เลย
-000086 c007                          rjmp start_bcd
+00007e fef0                          sbrs MODE_FLAG, 0   ; ถ้าโหมดก้าว (0) ให้ข้ามไปแยกหลัก BCD เลย
+00007f c007                          rjmp start_bcd
                                  
                                      ; โหมดเมตร: คูณจำนวนก้าวด้วย 7 (1 ก้าว = 0.6 เมตร)
-000087 2f81                          mov r24, r17
-000088 2f92                          mov r25, r18
-000089 e075                          ldi r23, 5          ; นำมาบวกทบกัน 5 ครั้ง (รวมตัวมันเอง = 6)
+000080 2f81                          mov r24, r17
+000081 2f92                          mov r25, r18
+000082 e075                          ldi r23, 5          ; นำมาบวกทบกัน 5 ครั้ง (รวมตัวมันเอง = 6)
                                  	mul_loop:
-00008a 0f18                      		add r17, r24
-00008b 1f29                      		adc r18, r25
-00008c 957a                      		dec r23
-00008d f7e1                      		brne mul_loop
+000083 0f18                      		add r17, r24
+000084 1f29                      		adc r18, r25
+000085 957a                      		dec r23
+000086 f7e1                      		brne mul_loop
                                  
                                  	start_bcd:
-00008e 2766                      		clr DIG4
-00008f 2755                      		clr DIG3
-000090 2744                      		clr DIG2
-000091 2733                      		clr DIG1
+000087 2766                      		clr DIG4
+000088 2755                      		clr DIG3
+000089 2744                      		clr DIG2
+00008a 2733                      		clr DIG1
                                  
-000092 ee08                      	L4: ldi  r16, low(1000)
-000093 e073                      		ldi  r23, high(1000)
-000094 1710                      		cp   r17, r16
-000095 0727                      		cpc  r18, r23
-000096 f020                      		brlo L3
-000097 1b10                      		sub  r17, r16
-000098 0b27                      		sbc  r18, r23
-000099 9563                      		inc  DIG4
-00009a cff7                      		rjmp L4
+00008b ee08                      	L4: ldi  r16, low(1000)
+00008c e073                      		ldi  r23, high(1000)
+00008d 1710                      		cp   r17, r16
+00008e 0727                      		cpc  r18, r23
+00008f f020                      		brlo L3
+000090 1b10                      		sub  r17, r16
+000091 0b27                      		sbc  r18, r23
+000092 9563                      		inc  DIG4
+000093 cff7                      		rjmp L4
                                  
-00009b e604                      	L3: ldi  r16, 100
-00009c 1710                      		cp   r17, r16
-00009d e070                      		ldi  r23, 0
-00009e 0727                      		cpc  r18, r23
-00009f f020                      		brlo L2
-0000a0 1b10                      		sub  r17, r16
-0000a1 0b27                      		sbc  r18, r23
-0000a2 9553                      		inc  DIG3
-0000a3 cff7                      		rjmp L3
+000094 e604                      	L3: ldi  r16, 100
+000095 1710                      		cp   r17, r16
+000096 e070                      		ldi  r23, 0
+000097 0727                      		cpc  r18, r23
+000098 f020                      		brlo L2
+000099 1b10                      		sub  r17, r16
+00009a 0b27                      		sbc  r18, r23
+00009b 9553                      		inc  DIG3
+00009c cff7                      		rjmp L3
                                  
-0000a4 e00a                      	L2: ldi  r16, 10
-0000a5 1710                      		cp   r17, r16
-0000a6 e070                      		ldi  r23, 0
-0000a7 0727                      		cpc  r18, r23
-0000a8 f020                      		brlo L1
-0000a9 1b10                      		sub  r17, r16
-0000aa 0b27                      		sbc  r18, r23
-0000ab 9543                      		inc  DIG2
-0000ac cff7                      		rjmp L2
+00009d e00a                      	L2: ldi  r16, 10
+00009e 1710                      		cp   r17, r16
+00009f e070                      		ldi  r23, 0
+0000a0 0727                      		cpc  r18, r23
+0000a1 f020                      		brlo L1
+0000a2 1b10                      		sub  r17, r16
+0000a3 0b27                      		sbc  r18, r23
+0000a4 9543                      		inc  DIG2
+0000a5 cff7                      		rjmp L2
                                  
-0000ad 2f31                      	L1: mov  DIG1, r17
-0000ae 919f                      		pop  r25            ; *** pop คืนให้ครบ ***
-0000af 918f                      		pop  r24
-0000b0 917f                      		pop  r23
-0000b1 912f                      		pop  r18
-0000b2 911f                      		pop  r17
-0000b3 910f                      		pop  r16
+0000a6 2f31                      	L1: mov  DIG1, r17
+0000a7 919f                      		pop  r25            ; *** pop คืนให้ครบ ***
+0000a8 918f                      		pop  r24
+0000a9 917f                      		pop  r23
+0000aa 912f                      		pop  r18
+0000ab 911f                      		pop  r17
+0000ac 910f                      		pop  r16
+0000ad 9508                      		ret
+                                 ;------------------------------------------------
+                                 ; Delay Subroutine
+                                 ;------------------------------------------------
+                                 delay_500ms_with_display:
+0000ae e3a2                          ldi  r26, 50				; Loop 50 time
+                                 	d_step1:
+0000af 93af                      		push r26				; 2 clk cycle
+0000b0 df6f                      		rcall display_counter	; 4ms (While doing delay also run refresh digit)
+0000b1 91af                      		pop  r26				; 2 clk cycle
+0000b2 95aa                      		dec  r26				; 1 clk cycle
+0000b3 f7d9                      		brne d_step1			; 1 clk cyle
 0000b4 9508                      		ret
                                  
                                  delay_1ms:
-0000b5 e184                          ldi  r24, 20
-0000b6 ef7f                      	d1: ldi  r23, 255
-0000b7 957a                      	d2: dec  r23
-0000b8 f7f1                      		brne d2
-0000b9 958a                      		dec  r24
-0000ba f7d9                      		brne d1
-0000bb 9508                          ret
+0000b5 938f                      	push r24
+0000b6 937f                      	push r23
                                  
+0000b7 e184                          ldi  r24, 20
+0000b8 ef7f                      d1: ldi  r23, 255
+0000b9 957a                      d2: dec  r23
+0000ba f7f1                          brne d2
+0000bb 958a                          dec  r24
+0000bc f7d9                          brne d1
+                                     
+0000bd 917f                      	pop r23
+0000be 918f                      	pop r24
+0000bf 9508                      	ret
+                                 
+                                 
+                                 ;------------------------------------------------
+                                 ; Binary (BCD) to 7 Segment
+                                 ; r25 is both input and output
+                                 ;------------------------------------------------
                                  BIN_TO_7SEG:
-                                 	; r25 is input
-                                 	; r25 is output
-0000bc 93ef                          push ZL
-0000bd 93ff                          push ZH
-0000be 920f                          push r0
+0000c0 93ef                          push ZL
+0000c1 93ff                          push ZH
+0000c2 920f                          push r0
                                  	
-0000bf 2400                      	clr r0
-0000c0 c005                      	rjmp LOOK_TABLE	; call
+0000c3 2400                      	clr r0
+0000c4 c005                      	rjmp LOOK_TABLE		; call table
                                  	
                                  	TB_7SEG:
-0000c1 063f                      		.DB 0b00111111, 0b00000110 ; 0, 1
-0000c2 4f5b                      		.DB 0b01011011, 0b01001111 ; 2, 3
-0000c3 6d66                      		.DB 0b01100110, 0b01101101 ; 4, 5
-0000c4 077d                      		.DB 0b01111101, 0b00000111 ; 6, 7
-0000c5 6f7f                      		.DB 0b01111111, 0b01101111 ; 8, 9
+0000c5 063f                      		.DB 0b00111111, 0b00000110	; 0, 1
+0000c6 4f5b                      		.DB 0b01011011, 0b01001111	; 2, 3
+0000c7 6d66                      		.DB 0b01100110, 0b01101101	; 4, 5
+0000c8 077d                      		.DB 0b01111101, 0b00000111	; 6, 7
+0000c9 6f7f                      		.DB 0b01111111, 0b01101111	; 8, 9
                                  
                                  	LOOK_TABLE:
-0000c6 e8e2                      		ldi ZL, low(TB_7SEG*2)	; set lower address of TB_7SEG to ZL
-0000c7 e0f1                      		ldi ZH, high(TB_7SEG*2)	; set higher address of TB_7SEG to ZH
-0000c8 0fe9                      		add ZL, r25				; ZL <- ZL + r25 
-0000c9 1df0                      		adc ZH, r0				; ZH <- ZH + r0 + carry
-0000ca 9004                      		lpm r0, Z				; load program memmory Z to r0
-0000cb 2d90                      		mov r25, r0				; z25 <- r0
+0000ca e8ea                      		ldi ZL, low(TB_7SEG*2)	; set lower address of TB_7SEG to ZL
+0000cb e0f1                      		ldi ZH, high(TB_7SEG*2)	; set higher address of TB_7SEG to ZH
+0000cc 0fe9                      		add ZL, r25				; ZL <- ZL + r25 
+0000cd 1df0                      		adc ZH, r0				; ZH <- ZH + r0 + carry
+0000ce 9004                      		lpm r0, Z				; load program memmory Z to r0
+0000cf 2d90                      		mov r25, r0				; z25 <- r0
                                      
-0000cc 900f                      	pop r0
-0000cd 91ff                      	pop ZH
-0000ce 91ef                      	pop ZL
+0000d0 900f                      	pop r0
+0000d1 91ff                      	pop ZH
+0000d2 91ef                      	pop ZL
 
 
 RESOURCE USE INFORMATION
@@ -1365,37 +1366,37 @@ counted separately from r26..r31 here.
 "ATmega328P" register use summary:
 x  :   0 y  :   0 z  :   3 r0 :   6 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   4 r16:  48 r17:  15 r18:  14 r19:   3 r20:   7 
-r21:   3 r22:   3 r23:  19 r24:  15 r25:  26 r26:   6 r27:   0 r28:   0 
+r13:   0 r14:   0 r15:   4 r16:  48 r17:  13 r18:  12 r19:   3 r20:   7 
+r21:   3 r22:   3 r23:  21 r24:  21 r25:  26 r26:   6 r27:   0 r28:   0 
 r29:   0 r30:   6 r31:   6 
 Registers used: 16 out of 35 (45.7%)
 
 "ATmega328P" instruction use summary:
-.lds  :   0 .sts  :   0 adc   :   3 add   :   3 adiw  :   0 and   :   0 
+.lds  :   0 .sts  :   0 adc   :   4 add   :   3 adiw  :   0 and   :   0 
 andi  :   1 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
-brcc  :   1 brcs  :   0 break :   0 breq  :   0 brge  :   0 brhc  :   0 
+brcc  :   0 brcs  :   0 break :   0 breq  :   0 brge  :   0 brhc  :   0 
 brhs  :   0 brid  :   0 brie  :   0 brlo  :   3 brlt  :   0 brmi  :   0 
 brne  :   7 brpl  :   0 brsh  :   1 brtc  :   0 brts  :   0 brvc  :   0 
 brvs  :   0 bset  :   0 bst   :   0 call  :   0 cbi   :   0 cbr   :   0 
-clc   :   0 clh   :   0 cli   :   0 cln   :   0 clr   :   9 cls   :   0 
+clc   :   0 clh   :   0 cli   :   0 cln   :   0 clr   :  10 cls   :   0 
 clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   3 cpc   :   3 
 cpi   :   3 cpse  :   0 dec   :   5 eor   :   1 fmul  :   0 fmuls :   0 
-fmulsu:   0 icall :   0 ijmp  :   0 in    :   4 inc   :   4 jmp   :   0 
+fmulsu:   0 icall :   0 ijmp  :   0 in    :   4 inc   :   3 jmp   :   0 
 ld    :   0 ldd   :   0 ldi   :  34 lds   :   0 lpm   :   2 lsl   :   0 
-lsr   :   1 mov   :  10 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
-neg   :   0 nop   :   0 or    :   0 ori   :   1 out   :  15 pop   :  20 
-push  :  20 rcall :  15 ret   :   6 reti  :   1 rjmp  :  11 rol   :   0 
+lsr   :   1 mov   :   8 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
+neg   :   0 nop   :   0 or    :   0 ori   :   1 out   :  15 pop   :  23 
+push  :  23 rcall :  15 ret   :   6 reti  :   1 rjmp  :  11 rol   :   0 
 ror   :   0 sbc   :   3 sbci  :   0 sbi   :   0 sbic  :   0 sbis  :   0 
 sbiw  :   0 sbr   :   0 sbrc  :   1 sbrs  :   2 sec   :   0 seh   :   0 
 sei   :   1 sen   :   0 ser   :   0 ses   :   0 set   :   0 sev   :   0 
 sez   :   0 sleep :   0 spm   :   0 st    :   2 std   :   0 sts   :   0 
 sub   :   3 subi  :   0 swap  :   0 tst   :   0 wdr   :   0 
-Instructions used: 33 out of 113 (29.2%)
+Instructions used: 32 out of 113 (28.3%)
 
 "ATmega328P" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x0001a0    396     10    406   32768   1.2%
+[.cseg] 0x000000 0x0001a8    404     10    414   32768   1.3%
 [.dseg] 0x000100 0x000100      0      0      0    2048   0.0%
 [.eseg] 0x000000 0x000000      0      0      0    1024   0.0%
 
