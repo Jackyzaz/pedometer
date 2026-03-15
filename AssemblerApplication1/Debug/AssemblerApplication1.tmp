@@ -1,0 +1,53 @@
+<ASSEMBLER_INFO>
+ <VERSION>2.2.8</VERSION>
+ <DEVICE>"ATmega328P"</DEVICE>
+ <WORKING_DIR>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\Debug</WORKING_DIR>
+ <INCLUDE_PATH>
+  <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
+  <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
+  <DIR></DIR>
+ </INCLUDE_PATH>
+ <SOURCE_FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</SOURCE_FILE>
+ <INCLUDED_FILES>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328pdef.inc</FILE>
+ </INCLUDED_FILES>
+ <OBJECT_FILES>
+  <FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\Debug\AssemblerApplication1.obj</FILE>
+ </OBJECT_FILES>
+ <HEX_FILES>
+  <FILE>AssemblerApplication1.hex</FILE>
+ </HEX_FILES>
+ <OUTPUT_FILES>
+  <FILE>AssemblerApplication1.map</FILE>
+  <FILE>AssemblerApplication1.lss</FILE>
+ </OUTPUT_FILES>
+ <LABELS>
+  <start><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>22</LINE></start>
+  <PinChangeInt0><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>110</LINE></PinChangeInt0>
+  <UpdateDigits><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>211</LINE></UpdateDigits>
+  <main_loop><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>60</LINE></main_loop>
+  <display_counter><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>64</LINE></display_counter>
+  <BIN_TO_7SEG><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>290</LINE></BIN_TO_7SEG>
+  <delay_1ms><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>281</LINE></delay_1ms>
+  <check_step><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>129</LINE></check_step>
+  <EndInt><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>154</LINE></EndInt>
+  <check_majority><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>169</LINE></check_majority>
+  <delay_500ms_with_display><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>198</LINE></delay_500ms_with_display>
+  <count_loop><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>176</LINE></count_loop>
+  <skip_inc><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>180</LINE></skip_inc>
+  <is_true><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>187</LINE></is_true>
+  <end_check><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>189</LINE></end_check>
+  <d_step1><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>200</LINE></d_step1>
+  <start_bcd><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>236</LINE></start_bcd>
+  <mul_loop><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>230</LINE></mul_loop>
+  <L4><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>242</LINE></L4>
+  <L3><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>252</LINE></L3>
+  <L2><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>262</LINE></L2>
+  <L1><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>272</LINE></L1>
+  <d1><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>283</LINE></d1>
+  <d2><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>284</LINE></d2>
+  <LOOK_TABLE><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>307</LINE></LOOK_TABLE>
+  <TB_7SEG><FILE>C:\Users\LENOVO\Documents\Atmel Studio\7.0\AssemblerApplication1\AssemblerApplication1\main.asm</FILE><LINE>300</LINE></TB_7SEG>
+ </LABELS>
+</ASSEMBLER_INFO>
